@@ -1,0 +1,16 @@
+#
+# To Install the Required modules run:
+# pip3 install -r requirements.txt
+#
+# Standard Core Packages to Upgrade
+#
+datetime
+#
+# Third Party Modules
+#
+click
+croniter
+boto3
+botocore
+columnar
+requests
