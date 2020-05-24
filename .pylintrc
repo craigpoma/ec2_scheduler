@@ -4,10 +4,13 @@ max-line-length=120
 
 [DESIGN]
 # Maximum number of local variable for a function or method
-max-locals=25
+max-locals=30
 
 # Maximum number of arguments for a function or method
 max-args=10
 
 # Maximum number of branches
-max-branches=15
+max-branches=20
+
+# Maximum number of statements
+max-statements=60
