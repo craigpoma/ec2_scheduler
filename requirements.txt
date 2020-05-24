@@ -13,4 +13,5 @@ croniter
 boto3
 botocore
 columnar
+pylint
 requests
