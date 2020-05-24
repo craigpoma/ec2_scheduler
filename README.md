@@ -1,6 +1,6 @@
 
 # EC2_SCHEDULER
-[![Build Status](https://travis-ci.com/cpoma/ec2_scheduler.svg?branch=master)](https://travis-ci.com/cpoma/ec2_scheduler)
+[![Build Status](https://travis-ci.org/github/cpoma/ec2_scheduler.svg?branch=master)](https://travis-ci.org/github/cpoma/ec2_scheduler)
 
 This is a "simple" yet feature filled Python 3 module that will allow you to 
 stop and start EC2 instances on a schedule using TAGS associated with your EC2
