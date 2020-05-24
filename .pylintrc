@@ -1,1 +1,13 @@
-/opt/projects/PycharmProjects/.pylintrc
+[FORMAT]
+# Maximum number of characters on a single line.
+max-line-length=120
+
+[DESIGN]
+# Maximum number of local variable for a function or method
+max-locals=25
+
+# Maximum number of arguments for a function or method
+max-args=10
+
+# Maximum number of branches
+max-branches=15
