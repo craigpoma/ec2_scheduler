@@ -171,7 +171,7 @@ For more info on these other options see:
 </pre>	 
 
 ## Installation
-The is a <code>requirements.txt</code> file that you can use to install the 
+There is a <code>requirements.txt</code> file that you can use to install the 
 required Python 3 modules that support this module.
 
 ## AWS IAM Role
