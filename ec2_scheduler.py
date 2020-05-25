@@ -342,6 +342,12 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
               + f"{BCOLORS['ENDC']}" + '*' * 65 + '\n')
         print('Exception error: %s' % (perm_exception))
         sys.exit()
+    except FileNotFoundError as file_exception:
+        print("\n\n\n" + '*' * 65
+              + f"\n\t{BCOLORS['BOLD']}{BCOLORS['OKRED']}The logger cannot open and write to the log file directory.\n"
+              + f"{BCOLORS['ENDC']}" + '*' * 65 + '\n')
+        print('Exception error: %s' % (file_exception))
+        sys.exit()
 
     now = datetime.datetime.now()
 
