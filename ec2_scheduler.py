@@ -480,8 +480,8 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
                                      stop_sched, current_action])
 
             if ec2_instance:
-                logger.info("\n\n %s", columnar(ec2_instance, headers=HEADERS,
-                                                no_borders=False))
+                logger.info("\n\n%s", columnar(ec2_instance, headers=HEADERS,
+                                               no_borders=False))
                 if verbose:
                     print(columnar(ec2_instance, headers=HEADERS,
                                    no_borders=False))
