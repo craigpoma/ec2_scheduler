@@ -226,10 +226,10 @@ For more information see:
 </code></pre>
 
 ## Running as a CRON Task
-Create a file <code>/etc/cron.d/ec2-scheduler</code> with the following content:
+Create a file <code>/etc/cron.d/ec2-scheduler</code> with the following content (I'm restricting to US-EAST-1 in this template and using a IAM Role):
 <pre>
 # Run EC2-Scheduler every 10 minutes against just the US-EAST-1 region
-*/10 * * * * root COLUMNS=150 /usr/bin/env python3 /path/to/ec2_scheduler.py -i <role_name or use the -a -s -t options> -l "us-east-1" -d 0
+*/10 * * * * root COLUMNS=150 /usr/bin/env python3 /path/to/ec2_scheduler.py -i "role_name or use the -a -s -t options" -l "us-east-1" -d 0
 </pre>
 
 This will run every 10 minutes and write to the log file <code>/var/log/ec2-scheduler.log</code> or <code>C:/temp/ec2-scheduler.log</code> (on Windows). Keep that in mind - this will consume disk space. On Linux - you can setup log rotate to minimize the disk space this consumes. Here is an example <code>/etc/logrotate.d/ec2-scheduler</code> file to reduce disk consumption.
