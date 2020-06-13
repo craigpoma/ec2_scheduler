@@ -122,7 +122,8 @@ def perform_action(schedule, now, fuzzy_seconds, instance_name, logger):
             logger.info("Instance Name %s" % instance_name)
             logger.info("Current Action Time %s" % now)
             logger.info("Action time + Delta Window Seconds(%d) %s" % (fuzzy_seconds, date_plus_delta))
-            logger.info("Cron Action(%s) Time for Instance(%s) %s" % (action_performed, instance_name, tag_scheduled_time))
+            logger.info("Cron Action(%s) Time for Instance(%s) %s" % (action_performed, instance_name,
+                                                                      tag_scheduled_time))
     except CroniterNotAlphaError as cron_exception:
         time_to_act = False
         logger.error('Exception error CroniterNotAlphaError: %s' \
