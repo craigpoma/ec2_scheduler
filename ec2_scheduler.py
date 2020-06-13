@@ -18,6 +18,7 @@ requires.
 import datetime
 import json
 import logging
+import os
 import re
 import sys
 # Third Party Imports
@@ -45,6 +46,13 @@ BCOLORS = {
     'BOLD' : '\033[1m',
     'UNDERLINE' : '\033[4m'
 }
+LOGFILE_NAME = '/var/log/ec2-scheduler.log'
+if os.name == 'nt':
+    # Running on Windows and the ASCII Code will not work - Blank them out
+    for key in BCOLORS:
+        BCOLORS[key] = ''
+    # Set log to TEMP folder for basic location on Windows
+    LOGFILE_NAME = 'C:/temp/ec2-scheduler.log'
 
 HEADERS = ["Instance ID", "Instance Name", "Instance Type",
            "Region", "Instance State", "Start Time",
@@ -65,14 +73,40 @@ def dry_run_warning(dryrun=None, verbose=None, logger=None):
                   + f"\n\t{BCOLORS['BOLD']}{BCOLORS['OKRED']}NO ACTIONS WILL HAPPEN - DRY RUN MODE\n"
                   + f"{BCOLORS['ENDC']}" + '*'*50 + '\n')
 
-def perform_action(schedule, now, fuzzy_seconds, logger):
+
+def extract_tags(instance_tags=None, instance_name='Unknown', start_sched='None', stop_sched='None'):
+    """ Extract the TAG values we care about for the module """
+    for tag_set in instance_tags:
+        if tag_set['Key'] == "Name" and \
+                tag_set['Value'] is not None and \
+                tag_set['Value'] != "":
+            instance_name = tag_set['Value']
+
+        if tag_set['Key'] == 'CLAP_ON' and \
+                tag_set['Value'] is not None and \
+                tag_set['Value'] != "":
+            start_sched = tag_set['Value']
+
+        if tag_set['Key'] == 'CLAP_OFF' and \
+                tag_set['Value'] is not None and \
+                tag_set['Value'] != "":
+            stop_sched = tag_set['Value']
+
+    return {
+        'instance_name' : instance_name,
+        'start_sched': start_sched,
+        'stop_sched': stop_sched
+    }
+
+def perform_action(schedule, now, fuzzy_seconds, instance_name, logger):
     """
     Fuzzy time scheduler to determine if action should be taken to start or
     stop an instance. It takes the "fuzzy" amount of seconds and decides if
     the cron schedule (schedule) falls between now and now + seconds(passed in)
     """
     try:
-        if schedule == 'IGNORE':
+        action_performed = "Stop"
+        if schedule in ('IGNORE', 'None'):
             # DO NOTHING
             time_to_act = False
         else:
@@ -81,12 +115,14 @@ def perform_action(schedule, now, fuzzy_seconds, logger):
             if fuzzy_seconds > 0:
                 tag_scheduled_time = cron.get_next(datetime.datetime)
                 time_to_act = (now < tag_scheduled_time < date_plus_delta)
+                action_performed = "Start"
             else:
                 tag_scheduled_time = cron.get_prev(datetime.datetime)
                 time_to_act = (date_plus_delta < tag_scheduled_time < now)
-            logger.info("now %s" % now)
-            logger.info("date_plus_delta %s" % date_plus_delta)
-            logger.info("tag_scheduled_time %s" % tag_scheduled_time)
+            logger.info("Instance Name %s" % instance_name)
+            logger.info("Current Action Time %s" % now)
+            logger.info("Action time + Delta Window Seconds(%d) %s" % (fuzzy_seconds, date_plus_delta))
+            logger.info("Cron Action(%s) Time for Instance(%s) %s" % (action_performed, instance_name, tag_scheduled_time))
     except CroniterNotAlphaError as cron_exception:
         time_to_act = False
         logger.error('Exception error CroniterNotAlphaError: %s' \
@@ -234,7 +270,8 @@ def seed_iam_values(iam_role=None, logger=None, verbose=None):
               envvar='AWS_LIMITED_REGION',
               required=False,
               type=str,
-              help='Specifies the limited set of AWS Regions to inspect as a comma separated list')
+              help='Specifies the limited set of AWS Regions to inspect as a comma separated list'
+              + ' Example:  -l "us-east-2,us-east-1"')
 
 @click.option('--access_key', '-a',
               default='',
@@ -275,6 +312,12 @@ def seed_iam_values(iam_role=None, logger=None, verbose=None):
               help='Allows for filtering to EC2 instances that have a name matching '
               + 'the specified string')
 
+@click.option('--instance_filter', '-f',
+              default='',
+              required=False,
+              type=str,
+              help='Allows for filtering to EC2 instances by instance IDs')
+
 @click.option('--fuzzy_minutes', '-m',
               default=10,
               required=True,
@@ -283,16 +326,16 @@ def seed_iam_values(iam_role=None, logger=None, verbose=None):
               + ' minutes.')
 
 @click.option('--verbose', '-V',
-              default=False,
-              required=True,
+              default=True,
+              required=False,
               type=bool,
               help='True (1) of False (0) - Should STDOUT data be provided. '
-              + 'Default: False. Details of run are logged in '
+              + 'Default: True. Details of run are logged in '
               +'/var/log/ec2-scheduler.log')
 
 def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
          session_token=None, dryrun=True, limit_regions=None,
-         name_filter=None, fuzzy_minutes=10, verbose=False):
+         name_filter=None, instance_filter=None, fuzzy_minutes=10, verbose=False):
     """
     This is a "simple" yet feature filled Python 3 module that will allow you
     to stop and start EC2 instances on a schedule using TAGS associated with
@@ -332,7 +375,7 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
     logger = None
     try:
         # Set up our logger
-        logging.basicConfig(filename='/var/log/ec2-scheduler.log',
+        logging.basicConfig(filename=LOGFILE_NAME,
                             level=logging.INFO,
                             format='%(asctime)s %(levelname)s %(message)s')
         logger = logging.getLogger('ec2-scheduler')
@@ -343,9 +386,9 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
         print('Exception error: %s' % (perm_exception))
         sys.exit()
     except FileNotFoundError as file_exception:
-        print("\n\n\n" + '*' * 65
+        print("\n\n\n" + '*' * 70
               + f"\n\t{BCOLORS['BOLD']}{BCOLORS['OKRED']}The logger cannot open and write to the log file directory.\n"
-              + f"{BCOLORS['ENDC']}" + '*' * 65 + '\n')
+              + f"{BCOLORS['ENDC']}" + '*' * 70 + '\n')
         print('Exception error: %s' % (file_exception))
         sys.exit()
 
@@ -378,7 +421,6 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
             # pylint: enable=E1101
             start_instance_list = []
             stop_instance_list = []
-            #print (list(instances))
             if not list(instances):
                 logger.info("\t - No instances found in %s", region)
                 if verbose:
@@ -388,41 +430,35 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
             ec2_instance = []
             for instance in instances:
                 # print("Examining instance %s:" % instance)
-                instance_name = 'Unknown'
-                start_sched = 'None'
-                stop_sched = 'None'
                 current_action = 'None'
+                #
+                # Extract TAG Values
+                #
+                return_vals = extract_tags(instance_tags=instance.tags, instance_name='Unknown',
+                                           start_sched='None', stop_sched='None')
 
-                for tag_set in instance.tags:
-                    if tag_set['Key'] == "Name" and \
-                            tag_set['Value'] is not None and \
-                            tag_set['Value'] != "":
-                        instance_name = tag_set['Value']
+                instance_name = return_vals['instance_name']
+                start_sched = return_vals['start_sched']
+                stop_sched = return_vals['stop_sched']
 
-                    if tag_set['Key'] == 'CLAP_ON' and \
-                            tag_set['Value'] is not None and \
-                            tag_set['Value'] != "":
-                        start_sched = tag_set['Value']
+                # Must MATCH the filter to have an action upon it - if filter defined
+                if name_filter and not re.search(name_filter, instance_name):
+                    print('Skipping due to filter (%s) - %s' % (name_filter, instance_name))
+                    continue
 
-                    if tag_set['Key'] == 'CLAP_OFF' and \
-                            tag_set['Value'] is not None and \
-                            tag_set['Value'] != "":
-                        stop_sched = tag_set['Value']
-
-                # Must MATCH the filter to have an action upon it
-                if name_filter:
-                    if not re.search(name_filter, instance_name):
-                        print('Skipping due to filter (%s) - %s' % (name_filter, instance_name))
-                        continue
+                # Must MATCH the filter to have an action upon it - if filter defined
+                if instance_filter is not None and instance_filter != "" \
+                        and instance.id not in instance_filter.split(","):
+                    print('Skipping due to filter (%s) - %s' % (instance_filter.split(","), instance.id))
+                    continue
 
                 # Start instances if their CRON is between now and the
                 # next fuzzy_minutes minutes
                 if start_sched is not None and \
                         instance.state["Name"] == "stopped" and \
-                        perform_action(start_sched, now, fuzzy_minutes * 60,
+                        perform_action(start_sched, now, fuzzy_minutes * 60, instance_name,
                                        logger):
                     start_instance_list.append(instance.id)
-                    #current_action = "Starting Node"
                     current_action = f"{BCOLORS['BOLD']}{BCOLORS['OKGREEN']}" \
                                      + f"Starting Node{BCOLORS['ENDC']}"
 
@@ -430,10 +466,9 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
                 # and the now
                 if stop_sched is not None and \
                         instance.state["Name"] == "running" and \
-                        perform_action(stop_sched, now, fuzzy_minutes * -60,
+                        perform_action(stop_sched, now, fuzzy_minutes * -60, instance_name,
                                        logger):
                     stop_instance_list.append(instance.id)
-                    #current_action = "Stopping Node"
                     current_action = f"{BCOLORS['BOLD']}{BCOLORS['OKRED']}" \
                                      + f"Stopping Node{BCOLORS['ENDC']}"
 
