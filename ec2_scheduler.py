@@ -177,7 +177,7 @@ def process_start_instances(start_instance_list=None, aws_ec2_client=None,
 
 def init_connection(aws_region=None, limit_regions=None, access_key=None,
                     secret_key=None, session_token=None, iam_role=None,
-                    logger=None, verbose=None):
+                    logger=None, verbose=None,verify_certificate=True):
     """
     Setup the initial connection parameters for AWS
     """
@@ -201,12 +201,14 @@ def init_connection(aws_region=None, limit_regions=None, access_key=None,
                                       region_name=aws_region,
                                       aws_access_key_id=access_key,
                                       aws_secret_access_key=secret_key,
-                                      aws_session_token=session_token)
+                                      aws_session_token=session_token,
+                                      verify=verify_certificate)
 
         if limit_regions:
             # De-duplicate using list(set()) incase user passed in same values multiple times
             ec2_regions = sorted(list(set(limit_regions.split(","))))
         else:
+            # Retrieves all regions/endpoints that work with EC2
             ec2_regions = sorted([region['RegionName'] for region in
                                   aws_ec2_client.describe_regions()['Regions']])
 
@@ -274,25 +276,32 @@ def seed_iam_values(iam_role=None, logger=None, verbose=None):
               help='Specifies the limited set of AWS Regions to inspect as a comma separated list'
               + ' Example:  -l "us-east-2,us-east-1"')
 
-@click.option('--access_key', '-a',
-              default='',
-              envvar='AWS_ACCESS_KEY_ID',
+@click.option('--verify_certificate', '-k',
+              default=True,
               required=True,
+              type=bool,
+              help='True (1) of False (0) - Verify certificate when connecting to AWS. '
+              + 'Default: True.')
+
+@click.option('--access_key', '-a',
+              default=None,
+              envvar='AWS_ACCESS_KEY_ID',
+              required=False,
               type=str,
               help='Specifies an AWS access key associated with an IAM user or'
               + 'role.')
 
 @click.option('--secret_key', '-s',
-              default='',
+              default=None,
               envvar='AWS_SECRET_ACCESS_KEY',
-              required=True,
+              required=False,
               type=str,
               help='Specifies the secret key associated with the access key. '
               + 'This is essentially the "password" for the AWS_ACCESS_KEY_ID '
               + 'key.')
 
 @click.option('--session_token', '-t',
-              default='',
+              default=None,
               envvar='AWS_SESSION_TOKEN',
               required=False,
               type=str,
@@ -336,7 +345,7 @@ def seed_iam_values(iam_role=None, logger=None, verbose=None):
 
 def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
          session_token=None, dryrun=True, limit_regions=None,
-         name_filter=None, instance_filter=None, fuzzy_minutes=10, verbose=False):
+         name_filter=None, instance_filter=None, fuzzy_minutes=10, verbose=False, verify_certificate=True):
     """
     This is a "simple" yet feature filled Python 3 module that will allow you
     to stop and start EC2 instances on a schedule using TAGS associated with
@@ -404,7 +413,8 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
                                         session_token=session_token,
                                         iam_role=iam_role,
                                         logger=logger,
-                                        verbose=verbose)
+                                        verbose=verbose,
+                                        verify_certificate=verify_certificate)
 
     for region in inital_connection['ec2_regions']:
         try:
@@ -414,11 +424,13 @@ def main(iam_role=None, aws_region=None, access_key=None, secret_key=None,
             conn = boto3.resource('ec2', region_name=region,
                                   aws_access_key_id=inital_connection['access_key'],
                                   aws_secret_access_key=inital_connection['secret_key'],
-                                  aws_session_token=inital_connection['session_token'])
+                                  aws_session_token=inital_connection['session_token'],
+                                  verify=verify_certificate)
 
             # False Positive - so disable this finding here
             # pylint: disable=E1101
             instances = conn.instances.filter()
+
             # pylint: enable=E1101
             start_instance_list = []
             stop_instance_list = []
