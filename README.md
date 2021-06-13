@@ -68,44 +68,46 @@ On the commandline you can specify the following options:
     Usage: ec2_scheduler.py [OPTIONS]
     
     Options:
-      -i, --iam_role TEXT          Specifies the IAM Role name to use with AWS STS
-                                   operations
+      -i, --iam_role TEXT              Specifies the IAM Role name to use with AWS STS
+                                       operations
     
-      -r, --aws_region TEXT        Specifies the AWS Region to send the initial
-                                   connect request  [required]
+      -r, --aws_region TEXT            Specifies the AWS Region to send the initial
+                                       connect request  [required]
     
-      -l, --limit_regions TEXT     Specifies the limited set of AWS Regions to
-                                   inspect as a comma separated list
+      -l, --limit_regions TEXT         Specifies the limited set of AWS Regions to
+                                       inspect as a comma separated list
 
-      -k, --verify_certificate BOOLEAN Ignore certificate verification for SSL connection to AWS? - True (1) or False (0). Default: True (1)
+      -k, --verify_certificate BOOLEAN Ignore certificate verification for SSL 
+                                       connection to AWS? - True (1) or False (0).
+                                       Default: True (1)
     
-      -a, --access_key TEXT        Specifies an AWS access key associated with an
-                                   IAM user orrole.  [required]
+      -a, --access_key TEXT            Specifies an AWS access key associated with an
+                                       IAM user orrole.  [required]
     
-      -s, --secret_key TEXT        Specifies the secret key associated with the
-                                   access key. This is essentially the "password"
-                                   for the AWS_ACCESS_KEY_ID key.  [required]
+      -s, --secret_key TEXT            Specifies the secret key associated with the
+                                       access key. This is essentially the "password"
+                                       for the AWS_ACCESS_KEY_ID key.  [required]
     
-      -t, --session_token TEXT     Specifies the session token value that is
-                                   required if you are using temporary security
-                                   credentials that you retrieved directly from
-                                   AWS STS operations.
+      -t, --session_token TEXT         Specifies the session token value that is
+                                       required if you are using temporary security
+                                       credentials that you retrieved directly from
+                                       AWS STS operations.
     
-      -d, --dryrun BOOLEAN         Is this a DryRun - True (1) or False (0)
-                                   [required]
+      -d, --dryrun BOOLEAN             Is this a DryRun - True (1) or False (0)
+                                       [required]
     
-      -n, --name_filter TEXT       Allows for filtering to EC2 instances that have
-                                   a name matching the specified string
+      -n, --name_filter TEXT           Allows for filtering to EC2 instances that have
+                                       a name matching the specified string
     
-      -m, --fuzzy_minutes INTEGER  Fuzzy Minutes window to act on CRON actions -
-                                   Default 10  minutes.  [required]
+      -m, --fuzzy_minutes INTEGER      Fuzzy Minutes window to act on CRON actions -
+                                       Default 10  minutes.  [required]
     
-      -V, --verbose BOOLEAN        True (1) of False (0) - Should STDOUT data be
-                                   provided. Default: False. Details of run are
-                                   logged in /var/log/ec2-scheduler.log
-                                   [required]
+      -V, --verbose BOOLEAN            True (1) of False (0) - Should STDOUT data be
+                                       provided. Default: False. Details of run are
+                                       logged in /var/log/ec2-scheduler.log
+                                       [required]
     
-      --help                       Show this message and exit.
+      --help                           Show this message and exit.
 
     </code>
 </pre>
