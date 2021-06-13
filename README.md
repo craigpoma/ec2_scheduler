@@ -76,6 +76,8 @@ On the commandline you can specify the following options:
     
       -l, --limit_regions TEXT     Specifies the limited set of AWS Regions to
                                    inspect as a comma separated list
+
+      -k, --verify_certificate BOOLEAN Ignore certificate verification for SSL connection to AWS? - True (1) or False (0). Default: True (1)
     
       -a, --access_key TEXT        Specifies an AWS access key associated with an
                                    IAM user orrole.  [required]
