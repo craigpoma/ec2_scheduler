@@ -27,6 +27,8 @@ It is fairly common to set CLAP_OFF to a time, but CLAP_ON to ignore.
 This allows for your to manual start the node, but provides a consistent
 off time for the node.
 
+The CLAP_OFF set to 51 16 * * *
+
 Would map to a stop time of your server of 4:51pm each day of the week.
 The code allows for a "fuzzy_minutes" windows by default of 10 minutes. It
 will stop servers that should have been stopped between NOW and
