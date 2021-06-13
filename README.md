@@ -59,6 +59,9 @@ key. This is essentially the "password" for the AWS_ACCESS_KEY_ID key.
 are using temporary security credentials that you retrieved directly from AWS 
 STS operations.
 
+If the user running the code has a ~/.aws/credentials file. The authenticators located
+in that file will be used.
+
 You can "filter" the nodes the schedule tool attempts to turn off/on by
 using the <code>-n, --name_filter</code> commandline options.
 
